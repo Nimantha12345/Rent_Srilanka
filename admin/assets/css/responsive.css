@@ -1,0 +1,49 @@
+/* Mobile adjustments (320px+) */
+@media (max-width: 575.98px) {
+  .hero-section {
+    min-height: auto;
+    padding-top: 2rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+  .search-panel {
+    padding: 1.25rem !important;
+  }
+  .display-4 {
+    font-size: 2rem;
+  }
+  .location-card {
+    height: 140px;
+  }
+  .property-card .card-img-top {
+    height: 180px;
+  }
+}
+
+/* Tablet adjustments (768px+) */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .hero-section {
+    min-height: 460px;
+  }
+  .location-card {
+    height: 160px;
+  }
+}
+
+/* Desktop layout (1024px+) */
+@media (min-width: 1024px) {
+  .search-panel {
+    padding: 2rem !important;
+  }
+}
+
+/* Mobile Filter Bar Sticky Footer */
+.sticky-mobile-bar {
+  z-index: 1030;
+}
+
+/* Ensure padding on page bottom on small screens so footer doesn't get covered by sticky bar */
+@media (max-width: 991.98px) {
+  body {
+    padding-bottom: 60px;
+  }
+}
