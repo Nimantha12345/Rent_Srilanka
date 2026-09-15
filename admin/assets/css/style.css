@@ -2161,3 +2161,89 @@ body.messages-page-body {
     display: flex !important;
   }
 }
+
+/* ==========================================
+   AUTH & SPLIT LOGIN SCREEN STYLES
+   ========================================== */
+
+.bg-light-custom {
+  background-color: #f8fafc !important;
+}
+
+.text-navy {
+  color: #0a192f !important;
+}
+
+.text-primary-custom {
+  color: #0d6efd !important;
+}
+
+/* Split-screen Left Image & Gradient Overlay */
+.auth-split-bg {
+  background: url('../images/auth-bg.jpg') center center / cover no-repeat;
+  min-height: 580px;
+}
+
+.auth-overlay {
+  background: linear-gradient(135deg, rgba(10, 25, 47, 0.90) 0%, rgba(13, 110, 253, 0.75) 100%);
+  inset: 0;
+}
+
+/* Auth Container Form Fixes */
+.auth-form-container {
+  max-width: 420px;
+}
+
+/* Custom Tab Switcher (Owner vs Admin) */
+#roleTab {
+  background-color: #f1f5f9;
+  padding: 4px;
+}
+
+#roleTab .nav-link {
+  color: #64748b;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: all 0.25s ease-in-out;
+}
+
+#roleTab .nav-link.active {
+  background-color: #ffffff;
+  color: #0a192f;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+/* Input Field Styling Fixes */
+.input-group .input-group-text {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.form-control {
+  border-color: #e2e8f0;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+}
+
+.form-control:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.12);
+}
+
+.btn-primary {
+  background-color: #0a192f;
+  border-color: #0a192f;
+  padding: 0.7rem 1.2rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: #112240;
+  border-color: #112240;
+}
+
+.py-2-5 {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+}

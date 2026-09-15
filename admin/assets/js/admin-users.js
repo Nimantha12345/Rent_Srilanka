@@ -45,38 +45,74 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeTargetUserId = null;
 
+  // ----------------------------------------------------
+  // DATATABLES INITIALIZATION
+  // ----------------------------------------------------
+  let userTable = null;
+  if ($('#adminUsersTable').length) {
+    userTable = $('#adminUsersTable').DataTable({
+      "paging": true,
+      "lengthChange": true, // පෙන්වන ප්‍රමාණය වෙනස් කිරීමට (Show Entries menu)
+      "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+      "pageLength": 10,
+      "searching": true,
+      "ordering": true,
+      "info": true,
+      "autoWidth": false,
+      "dom": '<"d-flex justify-content-between align-items-center px-3 pt-3 mb-2"l>rt<"d-flex justify-content-between align-items-center p-3"ip>',
+      "columnDefs": [
+        { "orderable": false, "targets": [0, 7] } // User Avatar & Actions columns Sort නොකිරීමට
+      ]
+    });
+  }
+
   // 1. URL Query Parameter Sync (e.g. ?action=add)
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.get('action') === 'add' && bsFormModal) {
     bsFormModal.show();
   }
 
-  // 2. Filter & Search Logic
+  // 2. Filter & Search Logic with DataTables Support
   function filterAdminUsers() {
-    const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const searchVal = searchInput ? searchInput.value.trim() : '';
     const roleVal = roleFilter ? roleFilter.value : 'all';
     const statusVal = statusFilter ? statusFilter.value : 'all';
+    const sortVal = sortBySelect ? sortBySelect.value : 'newest';
 
-    const tableRows = document.querySelectorAll('.admin-user-row');
-    const mobileCards = document.querySelectorAll('.admin-user-card');
+    // DataTable filtering
+    if (userTable) {
+      // Search Box Filter
+      userTable.search(searchVal);
 
-    tableRows.forEach(row => {
-      const name = (row.getAttribute('data-name') || '').toLowerCase();
-      const email = (row.getAttribute('data-email') || '').toLowerCase();
-      const phone = (row.getAttribute('data-phone') || '').toLowerCase();
-      const role = row.getAttribute('data-role');
-      const status = row.getAttribute('data-status');
-
-      const matchesSearch = name.includes(searchVal) || email.includes(searchVal) || phone.includes(searchVal);
-      const matchesRole = (roleVal === 'all' || role === roleVal);
-      const matchesStatus = (statusVal === 'all' || status === statusVal);
-
-      if (matchesSearch && matchesRole && matchesStatus) {
-        row.classList.remove('d-none');
+      // Role Filter (Column 3)
+      if (roleVal === 'all') {
+        userTable.column(3).search('');
       } else {
-        row.classList.add('d-none');
+        userTable.column(3).search('^' + roleVal + '$', true, false);
       }
-    });
+
+      // Status Filter (Column 5)
+      if (statusVal === 'all') {
+        userTable.column(5).search('');
+      } else {
+        userTable.column(5).search('^' + statusVal + '$', true, false);
+      }
+
+      // Sorting
+      if (sortVal === 'newest') {
+        userTable.order([6, 'desc']); // Joined Column (Desc)
+      } else if (sortVal === 'oldest') {
+        userTable.order([6, 'asc']);  // Joined Column (Asc)
+      } else if (sortVal === 'properties_high') {
+        userTable.order([4, 'desc']); // Properties Column (Desc)
+      }
+
+      userTable.draw();
+    }
+
+    // Mobile Cards View Filtering
+    const mobileCards = document.querySelectorAll('.admin-user-card');
+    const searchValLower = searchVal.toLowerCase();
 
     mobileCards.forEach(card => {
       const name = (card.getAttribute('data-name') || '').toLowerCase();
@@ -85,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const role = card.getAttribute('data-role');
       const status = card.getAttribute('data-status');
 
-      const matchesSearch = name.includes(searchVal) || email.includes(searchVal) || phone.includes(searchVal);
+      const matchesSearch = name.includes(searchValLower) || email.includes(searchValLower) || phone.includes(searchValLower);
       const matchesRole = (roleVal === 'all' || role === roleVal);
       const matchesStatus = (statusVal === 'all' || status === statusVal);
 
@@ -221,8 +257,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnConfirmDeleteUser) {
     btnConfirmDeleteUser.addEventListener('click', () => {
       if (activeTargetUserId) {
-        const rows = document.querySelectorAll(`[data-id="${activeTargetUserId}"]`);
-        rows.forEach(item => item.remove());
+        if (userTable) {
+          const tr = document.querySelector(`tr.admin-user-row[data-id="${activeTargetUserId}"]`);
+          if (tr) userTable.row(tr).remove().draw();
+        }
+        const mobileCards = document.querySelectorAll(`.admin-user-card[data-id="${activeTargetUserId}"]`);
+        mobileCards.forEach(item => item.remove());
+        
         if (bsDeleteModal) bsDeleteModal.hide();
         filterAdminUsers();
       }

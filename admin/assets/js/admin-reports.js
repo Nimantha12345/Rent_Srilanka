@@ -38,8 +38,35 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnExecuteConfirmAction = document.getElementById('btnExecuteConfirmAction');
   let bsConfirmModal = actionConfirmModalEl ? new bootstrap.Modal(actionConfirmModalEl) : null;
 
+  // Delete Complaint Modal
+  const deleteReportModalEl = document.getElementById('deleteReportModal');
+  const deleteReportModalText = document.getElementById('deleteReportModalText');
+  const btnConfirmDeleteReport = document.getElementById('btnConfirmDeleteReport');
+  let bsDeleteReportModal = deleteReportModalEl ? new bootstrap.Modal(deleteReportModalEl) : null;
+
   let currentActiveReportId = null;
   let pendingActionType = null;
+
+  // ----------------------------------------------------
+  // DATATABLES INITIALIZATION WITH LENGTH MENU
+  // ----------------------------------------------------
+  let reportTable = null;
+  if ($('#adminReportsTable').length) {
+    reportTable = $('#adminReportsTable').DataTable({
+      "paging": true,
+      "lengthChange": true, // Show entries dropdown එක සක්‍රිය කිරීම
+      "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+      "pageLength": 10,
+      "searching": true,
+      "ordering": true,
+      "info": true,
+      "autoWidth": false,
+      "dom": '<"d-flex justify-content-between align-items-center px-3 pt-3 mb-2"l>rt<"d-flex justify-content-between align-items-center p-3"ip>',
+      "columnDefs": [
+        { "orderable": false, "targets": [1, 6] } // Property details & Actions columns Sort නොකිරීමට
+      ]
+    });
+  }
 
   // 1. URL Query Parameter Sync (e.g. ?id=402)
   const urlParams = new URLSearchParams(window.location.search);
@@ -49,43 +76,51 @@ document.addEventListener('DOMContentLoaded', () => {
     if (targetReport) openReportDetailModal(targetReport);
   }
 
-  // 2. Filter & Search Logic
+  // 2. Filter & Search Logic with DataTables Support
   function filterAdminReports() {
-    const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const searchVal = searchInput ? searchInput.value.trim() : '';
     const reasonVal = reasonFilter ? reasonFilter.value : 'all';
     const statusVal = statusFilter ? statusFilter.value : 'all';
+    const sortVal = sortBySelect ? sortBySelect.value : 'newest';
 
-    const tableRows = document.querySelectorAll('.admin-report-row');
-    const mobileCards = document.querySelectorAll('.admin-report-card');
+    // A. Apply Filters to DataTables
+    if (reportTable) {
+      reportTable.search(searchVal);
 
-    let pendingCount = 0;
-
-    tableRows.forEach(row => {
-      const reportId = (row.getAttribute('data-report-id') || '').toLowerCase();
-      const propTitle = (row.getAttribute('data-prop-title') || '').toLowerCase();
-      const reporter = (row.getAttribute('data-reporter-name') || '').toLowerCase();
-      const reason = row.getAttribute('data-reason');
-      const status = row.getAttribute('data-status');
-
-      if (status === 'Pending') pendingCount++;
-
-      const matchesSearch = reportId.includes(searchVal) || propTitle.includes(searchVal) || reporter.includes(searchVal);
-      const matchesReason = (reasonVal === 'all' || reason === reasonVal);
-      const matchesStatus = (statusVal === 'all' || status === statusVal);
-
-      if (matchesSearch && matchesReason && matchesStatus) {
-        row.classList.remove('d-none');
+      // Reason Filter (Column 3)
+      if (reasonVal === 'all') {
+        reportTable.column(3).search('');
       } else {
-        row.classList.add('d-none');
+        reportTable.column(3).search(reasonVal);
       }
-    });
+
+      // Status Filter (Column 5)
+      if (statusVal === 'all') {
+        reportTable.column(5).search('');
+      } else {
+        reportTable.column(5).search('^' + statusVal + '$', true, false);
+      }
+
+      // Sorting
+      if (sortVal === 'newest') {
+        reportTable.order([4, 'desc']); // Date Column (Desc)
+      } else if (sortVal === 'oldest') {
+        reportTable.order([4, 'asc']);  // Date Column (Asc)
+      }
+
+      reportTable.draw();
+    }
+
+    // B. Apply Filters to Mobile Cards View
+    const mobileCards = document.querySelectorAll('.admin-report-card');
+    const searchValLower = searchVal.toLowerCase();
 
     mobileCards.forEach(card => {
       const reportId = (card.getAttribute('data-report-id') || '').toLowerCase();
       const reason = card.getAttribute('data-reason');
       const status = card.getAttribute('data-status');
 
-      const matchesSearch = reportId.includes(searchVal);
+      const matchesSearch = reportId.includes(searchValLower);
       const matchesReason = (reasonVal === 'all' || reason === reasonVal);
       const matchesStatus = (statusVal === 'all' || status === statusVal);
 
@@ -96,10 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Update Sidebar Badge Count
+    // C. Update Sidebar Pending Count Badge
+    let pendingCount = 0;
+    document.querySelectorAll('.admin-report-row').forEach(row => {
+      if (row.getAttribute('data-status') === 'Pending') pendingCount++;
+    });
     const sidebarBadge = document.getElementById('adminSidebarReportsBadge');
     if (sidebarBadge) sidebarBadge.textContent = pendingCount;
   }
+
+  // Initial Filter Call
+  filterAdminReports();
 
   if (searchInput) searchInput.addEventListener('input', filterAdminReports);
   if (reasonFilter) reasonFilter.addEventListener('change', filterAdminReports);
@@ -143,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bsDetailModal) bsDetailModal.show();
   }
 
-  // Event Delegation for Review & Dismiss Buttons
+  // Event Delegation for Review, Dismiss & Delete Buttons
   document.addEventListener('click', (e) => {
     
     // Review Trigger
@@ -163,7 +205,36 @@ document.addEventListener('DOMContentLoaded', () => {
       updateReportStatusUI(reportId, 'Dismissed', 'bg-light text-muted border border-light-custom');
       alert(`Report ${reportId} has been dismissed.`);
     }
+
+    // Delete Complaint Trigger
+    const deleteBtn = e.target.closest('.btn-report-delete');
+    if (deleteBtn) {
+      e.preventDefault();
+      currentActiveReportId = deleteBtn.getAttribute('data-report-id');
+      if (deleteReportModalText) deleteReportModalText.textContent = `Are you sure you want to permanently delete complaint ${currentActiveReportId}?`;
+      if (bsDeleteReportModal) bsDeleteReportModal.show();
+    }
   });
+
+  // Confirm Delete Complaint Action
+  if (btnConfirmDeleteReport) {
+    btnConfirmDeleteReport.addEventListener('click', () => {
+      if (currentActiveReportId) {
+        // DataTable එකෙන් Row එක ඉවත් කිරීම
+        if (reportTable) {
+          const tr = document.querySelector(`tr.admin-report-row[data-report-id="${currentActiveReportId}"]`);
+          if (tr) reportTable.row(tr).remove().draw();
+        }
+
+        // Mobile Card එක ඉවත් කිරීම
+        const mobileCards = document.querySelectorAll(`.admin-report-card[data-report-id="${currentActiveReportId}"]`);
+        mobileCards.forEach(item => item.remove());
+
+        if (bsDeleteReportModal) bsDeleteReportModal.hide();
+        filterAdminReports();
+      }
+    });
+  }
 
   // 4. Modal Moderation Actions (Triggers Confirmation)
   if (modalBtnDismiss) {

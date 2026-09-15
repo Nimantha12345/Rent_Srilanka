@@ -14,6 +14,7 @@
   <!-- Bootstrap 5.3 & Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
   
   <!-- Custom CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
@@ -147,6 +148,7 @@
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-light border text-navy btn-report-review" data-report-id="REP-402" title="Review Report Details"><i class="bi bi-eye-fill me-1"></i>Review</button>
                       <button class="btn btn-light border text-secondary btn-report-dismiss" data-report-id="REP-402" title="Dismiss Report"><i class="bi bi-x-circle"></i></button>
+                      <button class="btn btn-light border text-danger btn-report-delete" data-report-id="REP-402" title="Delete Complaint"><i class="bi bi-trash"></i></button>
                     </div>
                   </td>
                 </tr>
@@ -188,6 +190,7 @@
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-light border text-navy btn-report-review" data-report-id="REP-398" title="Review Report Details"><i class="bi bi-eye-fill me-1"></i>Review</button>
                       <button class="btn btn-light border text-secondary btn-report-dismiss" data-report-id="REP-398" title="Dismiss Report"><i class="bi bi-x-circle"></i></button>
+                      <button class="btn btn-light border text-danger btn-report-delete" data-report-id="REP-402" title="Delete Complaint"><i class="bi bi-trash"></i></button>
                     </div>
                   </td>
                 </tr>
@@ -229,6 +232,7 @@
                     <div class="btn-group btn-group-sm">
                       <button class="btn btn-light border text-navy btn-report-review" data-report-id="REP-391" title="Review Report Details"><i class="bi bi-eye-fill me-1"></i>Review</button>
                       <button class="btn btn-light border text-secondary btn-report-dismiss" data-report-id="REP-391" title="Dismiss Report"><i class="bi bi-x-circle"></i></button>
+                      <button class="btn btn-light border text-danger btn-report-delete" data-report-id="REP-402" title="Delete Complaint"><i class="bi bi-trash"></i></button>
                     </div>
                   </td>
                 </tr>
@@ -485,9 +489,31 @@
     </div>
   </div>
 
+  <!-- DELETE COMPLAINT CONFIRMATION MODAL -->
+<div class="modal fade" id="deleteReportModal" tabindex="-1" aria-labelledby="deleteReportModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg rounded-4 text-center p-3">
+      <div class="modal-body p-3">
+        <div class="text-danger mb-3">
+          <i class="bi bi-trash-fill display-4"></i>
+        </div>
+        <h5 class="fw-bold text-navy mb-2" id="deleteReportModalLabel">Delete Complaint?</h5>
+        <p class="small text-muted mb-4" id="deleteReportModalText">Are you sure you want to permanently delete this complaint report?</p>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-light border flex-fill fw-medium" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger flex-fill fw-bold" id="btnConfirmDeleteReport">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <?php include 'components/footer.php'; ?>
 
   <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
   <script src="assets/js/main.js"></script>
   <script src="assets/js/admin-reports.js"></script>

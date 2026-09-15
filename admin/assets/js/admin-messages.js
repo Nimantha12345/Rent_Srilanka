@@ -4,92 +4,56 @@ document.addEventListener('DOMContentLoaded', () => {
   const conversationItems = document.querySelectorAll('.conversation-item');
   const searchInput = document.getElementById('conversationSearchInput');
   const btnClearSearch = document.getElementById('btnClearSearch');
-  const filterUserType = document.getElementById('filterUserType');
-  const filterStatus = document.getElementById('filterStatus');
-  const filterDate = document.getElementById('filterDate');
-  const btnResetFilters = document.getElementById('btnResetFilters');
-  const emptyListState = document.getElementById('emptyConversationList');
-  const visibleCountBadge = document.getElementById('visible-conversations-count');
+  const tabTypeBtns = document.querySelectorAll('.tab-type-btn');
+
+  // Empty State Containers
+  const emptyOwnerList = document.getElementById('emptyOwnerList');
+  const emptyCustomerList = document.getElementById('emptyCustomerList');
+  const emptyAllList = document.getElementById('emptyAllList');
+
+  // Chat Column Views
+  const chatHeader = document.getElementById('chatHeader');
+  const propertyContextBanner = document.getElementById('propertyContextBanner');
+  const chatMessageArea = document.getElementById('chatMessageArea');
+
+  // Headers Elements
+  const headerUserAvatar = document.getElementById('headerUserAvatar');
+  const headerUserName = document.getElementById('headerUserName');
+  const headerUserRoleBadge = document.getElementById('headerUserRoleBadge');
+  const headerUserMeta = document.getElementById('headerUserMeta');
+
+  // Banner Elements
+  const bannerPropertyImg = document.getElementById('bannerPropertyImg');
+  const bannerPropertyTitle = document.getElementById('bannerPropertyTitle');
+  const bannerPropertyLocation = document.getElementById('bannerPropertyLocation');
+  const bannerPropertyPrice = document.getElementById('bannerPropertyPrice');
+
+  // Back Button (Mobile)
   const btnBackToList = document.getElementById('btnBackToList');
 
-  // Chat View Elements
-  const chatMessageArea = document.getElementById('chatMessageArea');
-  const adminSendMessageForm = document.getElementById('adminSendMessageForm');
-  const adminMessageInput = document.getElementById('adminMessageInput');
-
-  // Header Elements
-  const headerUserAvatar = document.getElementById('headerUserAvatar');
-  const headerParticipantsText = document.getElementById('headerParticipantsText');
-  const headerThreadMeta = document.getElementById('headerThreadMeta');
-  const miniCardTitle = document.getElementById('miniCardTitle');
-  const miniCardPropertyId = document.getElementById('miniCardPropertyId');
-  const miniCardLocation = document.getElementById('miniCardLocation');
-  const miniCardPrice = document.getElementById('miniCardPrice');
-
-  // Modal Details
-  const mdConversationId = document.getElementById('mdConversationId');
-  const mdUserRole = document.getElementById('mdUserRole');
-  const mdUser = document.getElementById('mdUser');
-  const mdSubject = document.getElementById('mdSubject');
-  const mdProperty = document.getElementById('mdProperty');
-  const mdCreatedDate = document.getElementById('mdCreatedDate');
-  const mdLastDate = document.getElementById('mdLastDate');
+  // Message Form Elements
+  const chatSendMessageForm = document.getElementById('chatSendMessageForm');
+  const messageTextInput = document.getElementById('messageTextInput');
+  const btnAttachFile = document.getElementById('btnAttachFile');
+  const hiddenFileInput = document.getElementById('hiddenFileInput');
+  const attachmentPreviewContainer = document.getElementById('attachmentPreviewContainer');
+  const attachmentFileName = document.getElementById('attachmentFileName');
+  const btnRemoveAttachment = document.getElementById('btnRemoveAttachment');
 
   // Modals
-  const actionModalEl = document.getElementById('actionConfirmModal');
-  let bsActionModal = actionModalEl ? new bootstrap.Modal(actionModalEl) : null;
+  const newMessageModalEl = document.getElementById('newMessageModal');
+  const userDetailsModalEl = document.getElementById('userDetailsModal');
+  const actionConfirmModalEl = document.getElementById('actionConfirmModal');
+
+  let bsNewMessageModal = newMessageModalEl ? new bootstrap.Modal(newMessageModalEl) : null;
+  let bsUserDetailsModal = userDetailsModalEl ? new bootstrap.Modal(userDetailsModalEl) : null;
+  let bsActionConfirmModal = actionConfirmModalEl ? new bootstrap.Modal(actionConfirmModalEl) : null;
 
   let activeConversationItem = document.querySelector('.conversation-item.active');
+  let activeTypeFilter = 'all';
   let pendingActionType = null;
 
-  // 1. Conversation Item Click Handler
-  conversationItems.forEach(item => {
-    item.addEventListener('click', () => {
-      conversationItems.forEach(i => i.classList.remove('active'));
-      item.classList.add('active');
-      activeConversationItem = item;
-
-      // Extract Data Attributes
-      const convId = item.getAttribute('data-conversation-id');
-      const userName = item.getAttribute('data-user-name');
-      const userId = item.getAttribute('data-user-id');
-      const userRole = item.getAttribute('data-user-role');
-      const subject = item.getAttribute('data-subject');
-      const propTitle = item.getAttribute('data-property-title');
-      const propId = item.getAttribute('data-property-id');
-      const propLoc = item.getAttribute('data-property-location');
-      const propPrice = item.getAttribute('data-property-price');
-      const createdDate = item.getAttribute('data-created-date');
-      const lastDate = item.getAttribute('data-last-date');
-
-      // Update Header
-      if (headerUserAvatar) headerUserAvatar.textContent = getInitials(userName);
-      if (headerParticipantsText) headerParticipantsText.textContent = `Admin ↔ ${userName} (${userRole})`;
-      if (headerThreadMeta) headerThreadMeta.textContent = `Thread ID: #${convId} · Subject: ${subject}`;
-      if (miniCardTitle) miniCardTitle.textContent = propTitle;
-      if (miniCardPropertyId) miniCardPropertyId.textContent = `#${propId}`;
-      if (miniCardLocation) miniCardLocation.innerHTML = `<i class="bi bi-geo-alt me-1 text-danger"></i>${propLoc}`;
-      if (miniCardPrice) miniCardPrice.textContent = propPrice;
-
-      // Update Modal
-      if (mdConversationId) mdConversationId.textContent = `#${convId}`;
-      if (mdUserRole) mdUserRole.textContent = userRole;
-      if (mdUser) mdUser.textContent = `${userName} (ID: ${userId})`;
-      if (mdSubject) mdSubject.textContent = subject;
-      if (mdProperty) mdProperty.textContent = `${propTitle} (${propId})`;
-      if (mdCreatedDate) mdCreatedDate.textContent = createdDate;
-      if (mdLastDate) mdLastDate.textContent = lastDate;
-
-      if (chatCard) chatCard.classList.add('chat-view-active');
-    });
-  });
-
-  if (btnBackToList && chatCard) {
-    btnBackToList.addEventListener('click', () => {
-      chatCard.classList.remove('chat-view-active');
-    });
-  }
-
+  // Helper Initials
   function getInitials(name) {
     if (!name) return 'U';
     const parts = name.split(' ');
@@ -97,48 +61,117 @@ document.addEventListener('DOMContentLoaded', () => {
     return name.substring(0, 2).toUpperCase();
   }
 
-  // 2. Search & Filter Logic
+  // Scroll Chat to Bottom
+  function scrollToChatBottom() {
+    if (chatMessageArea) {
+      chatMessageArea.scrollTop = chatMessageArea.scrollHeight;
+    }
+  }
+  scrollToChatBottom();
+
+  // 1. Conversation Item Selection (Owner vs Customer Switcher)
+  conversationItems.forEach(item => {
+    item.addEventListener('click', () => {
+      conversationItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      activeConversationItem = item;
+
+      // Clear Unread Badge
+      const unreadBadge = item.querySelector('.badge-unread');
+      if (unreadBadge) unreadBadge.remove();
+      item.setAttribute('data-status', 'read');
+
+      const convType = item.getAttribute('data-conversation-type');
+      const convId = item.getAttribute('data-conversation-id');
+      const userName = item.getAttribute('data-user-name');
+      const userId = item.getAttribute('data-user-id');
+      const propTitle = item.getAttribute('data-property-title');
+      const propLoc = item.getAttribute('data-property-location');
+      const propPrice = item.getAttribute('data-property-price');
+      const propImg = item.getAttribute('data-property-image');
+
+      if (headerUserAvatar) headerUserAvatar.textContent = getInitials(userName);
+      if (headerUserName) headerUserName.textContent = userName;
+      if (headerUserRoleBadge) {
+        headerUserRoleBadge.textContent = convType.toUpperCase();
+        headerUserRoleBadge.className = convType === 'owner' ? 
+          'badge bg-primary-subtle text-primary border border-primary-subtle fs-9 rounded-pill' : 
+          'badge bg-teal-subtle text-teal border border-teal-subtle fs-9 rounded-pill';
+      }
+      if (headerUserMeta) headerUserMeta.textContent = `User ID: #${userId} · Thread: #${convId}`;
+
+      if (bannerPropertyImg) bannerPropertyImg.src = propImg;
+      if (bannerPropertyTitle) bannerPropertyTitle.textContent = propTitle;
+      if (bannerPropertyLocation) bannerPropertyLocation.innerHTML = `<i class="bi bi-geo-alt me-1 text-danger"></i>${propLoc}`;
+      if (bannerPropertyPrice) bannerPropertyPrice.textContent = propPrice;
+
+      // Populate User Modal Details
+      document.getElementById('userModalName').textContent = userName;
+      document.getElementById('userModalPhone').textContent = item.getAttribute('data-user-phone');
+      document.getElementById('userModalEmail').textContent = item.getAttribute('data-user-email');
+      document.getElementById('userModalLocation').textContent = item.getAttribute('data-user-location');
+      document.getElementById('userModalSince').textContent = item.getAttribute('data-user-since');
+      document.getElementById('userModalRoleBadge').textContent = convType === 'owner' ? 'Verified Property Owner' : 'Marketplace Renter';
+
+      // Mobile Responsive View Shift
+      if (chatCard) chatCard.classList.add('chat-view-active');
+      scrollToChatBottom();
+    });
+  });
+
+  // Mobile Back Button
+  if (btnBackToList && chatCard) {
+    btnBackToList.addEventListener('click', () => chatCard.classList.remove('chat-view-active'));
+  }
+
+  // 2. Type Tabs & Search Filter
   function applyFilters() {
     const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
-    const selectedType = filterUserType ? filterUserType.value : 'all';
-    const selectedStatus = filterStatus ? filterStatus.value : 'all';
     let visibleCount = 0;
+    let visibleOwner = 0;
+    let visibleCust = 0;
 
     conversationItems.forEach(item => {
-      const name = (item.getAttribute('data-user-name') || '').toLowerCase();
+      const type = item.getAttribute('data-conversation-type');
+      const userName = (item.getAttribute('data-user-name') || '').toLowerCase();
+      const propTitle = (item.getAttribute('data-property-title') || '').toLowerCase();
       const subject = (item.getAttribute('data-subject') || '').toLowerCase();
-      const propId = (item.getAttribute('data-property-id') || '').toLowerCase();
-      const convId = (item.getAttribute('data-conversation-id') || '').toLowerCase();
-      const type = item.getAttribute('data-user-type');
-      const status = item.getAttribute('data-status');
 
-      const matchesSearch = !searchTerm || name.includes(searchTerm) || subject.includes(searchTerm) || propId.includes(searchTerm) || convId.includes(searchTerm);
-      const matchesType = (selectedType === 'all') || (type === selectedType);
-      const matchesStatus = (selectedStatus === 'all') || (status === selectedStatus);
+      const matchesType = (activeTypeFilter === 'all') || (type === activeTypeFilter);
+      const matchesSearch = !searchTerm || userName.includes(searchTerm) || propTitle.includes(searchTerm) || subject.includes(searchTerm);
 
-      if (matchesSearch && matchesType && matchesStatus) {
+      if (matchesType && matchesSearch) {
         item.classList.remove('d-none');
         visibleCount++;
+        if (type === 'owner') visibleOwner++;
+        if (type === 'customer') visibleCust++;
       } else {
         item.classList.add('d-none');
       }
     });
 
-    if (visibleCountBadge) visibleCountBadge.textContent = `${visibleCount} Threads`;
+    // Toggle Empty States
+    if (emptyOwnerList) emptyOwnerList.classList.add('d-none');
+    if (emptyCustomerList) emptyCustomerList.classList.add('d-none');
+    if (emptyAllList) emptyAllList.classList.add('d-none');
 
-    if (emptyListState) {
-      if (visibleCount === 0) {
-        emptyListState.classList.remove('d-none');
-      } else {
-        emptyListState.classList.add('d-none');
-      }
+    if (visibleCount === 0) {
+      if (activeTypeFilter === 'owner' && emptyOwnerList) emptyOwnerList.classList.remove('d-none');
+      else if (activeTypeFilter === 'customer' && emptyCustomerList) emptyCustomerList.classList.remove('d-none');
+      else if (emptyAllList) emptyAllList.classList.remove('d-none');
     }
   }
 
+  tabTypeBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabTypeBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeTypeFilter = btn.getAttribute('data-type');
+      applyFilters();
+    });
+  });
+
   if (searchInput) searchInput.addEventListener('input', applyFilters);
-  if (filterUserType) filterUserType.addEventListener('change', applyFilters);
-  if (filterStatus) filterStatus.addEventListener('change', applyFilters);
-  if (filterDate) filterDate.addEventListener('change', applyFilters);
 
   if (btnClearSearch) {
     btnClearSearch.addEventListener('click', () => {
@@ -147,83 +180,159 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (btnResetFilters) {
-    btnResetFilters.addEventListener('click', () => {
-      if (searchInput) searchInput.value = '';
-      if (filterUserType) filterUserType.value = 'all';
-      if (filterStatus) filterStatus.value = 'all';
-      if (filterDate) filterDate.value = 'all';
-      applyFilters();
+  // 3. New Direct Message Modal Triggers
+  const btnOpenNewMessage = document.getElementById('btnOpenNewMessageModal');
+
+  if (btnOpenNewMessage) {
+    btnOpenNewMessage.addEventListener('click', () => {
+      if (bsNewMessageModal) bsNewMessageModal.show();
     });
   }
 
-  // 3. Send Message Logic
-  if (adminSendMessageForm) {
-    adminSendMessageForm.addEventListener('submit', (e) => {
+  const btnSubmitNewMessage = document.getElementById('btnSubmitNewMessage');
+  if (btnSubmitNewMessage) {
+    btnSubmitNewMessage.addEventListener('click', () => {
+      const user = document.getElementById('newMsgUserSelect')?.value;
+      const subj = document.getElementById('newMsgSubjectInput')?.value;
+      if (!user || !subj) {
+        alert('Please fill out all required fields.');
+        return;
+      }
+      alert(`Message thread created successfully for user: ${user}`);
+      if (bsNewMessageModal) bsNewMessageModal.hide();
+    });
+  }
+
+  // 4. Attachment Simulation
+  if (btnAttachFile && hiddenFileInput) {
+    btnAttachFile.addEventListener('click', () => hiddenFileInput.click());
+    hiddenFileInput.addEventListener('change', () => {
+      if (hiddenFileInput.files && hiddenFileInput.files[0]) {
+        if (attachmentFileName) attachmentFileName.textContent = hiddenFileInput.files[0].name;
+        if (attachmentPreviewContainer) attachmentPreviewContainer.classList.remove('d-none');
+      }
+    });
+  }
+
+  if (btnRemoveAttachment) {
+    btnRemoveAttachment.addEventListener('click', () => {
+      if (hiddenFileInput) hiddenFileInput.value = '';
+      if (attachmentPreviewContainer) attachmentPreviewContainer.classList.add('d-none');
+    });
+  }
+
+  // 5. Send Message (Key combinations: Enter to send, Shift+Enter for new line)
+  if (messageTextInput) {
+    messageTextInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatSendMessageForm.requestSubmit();
+      }
+    });
+  }
+
+  if (chatSendMessageForm) {
+    chatSendMessageForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      const messageText = adminMessageInput ? adminMessageInput.value.trim() : '';
-      if (!messageText) return;
+      const text = messageTextInput.value.trim();
+      const hasAttachment = !attachmentPreviewContainer.classList.contains('d-none');
 
-      const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (!text && !hasAttachment) return;
 
-      const newMsgHtml = `
-        <div class="chat-bubble-wrapper bubble-right ms-auto">
-          <div class="d-flex align-items-start gap-2 flex-row-reverse">
-            <div class="avatar-circle-sm bg-primary text-white fw-bold flex-shrink-0">AD</div>
-            <div class="chat-bubble shadow-xs bg-navy text-white rounded-4 p-3 max-w-75">
-              <div class="d-flex align-items-center justify-content-between gap-3 mb-1">
-                <span class="fw-bold fs-8 text-warning"><i class="bi bi-shield-check me-1"></i>System Admin</span>
-                <span class="fs-8 text-white-50">${currentTime}</span>
-              </div>
-              <p class="small mb-1">${escapeHtml(messageText)}</p>
-              <div class="d-flex align-items-center justify-content-end gap-1 fs-8 text-white-50">
-                <i class="bi bi-check2-all text-info"></i> Sent
-              </div>
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const msgId = `MSG-${Date.now().toString().slice(-4)}`;
+
+      let attachmentHtml = '';
+      if (hasAttachment) {
+        attachmentHtml = `
+          <div class="bg-white-10 border border-white-20 rounded-3 p-2 mb-2 d-flex align-items-center gap-2">
+            <i class="bi bi-file-earmark-arrow-down fs-5"></i>
+            <span class="fs-8 text-truncate flex-grow-1">${attachmentFileName.textContent}</span>
+          </div>
+        `;
+      }
+
+      const bubbleWrapper = document.createElement('div');
+      bubbleWrapper.className = 'chat-bubble-wrapper bubble-right ms-auto';
+      bubbleWrapper.setAttribute('data-message-id', msgId);
+      bubbleWrapper.setAttribute('data-sender-type', 'admin');
+
+      bubbleWrapper.innerHTML = `
+        <div class="d-flex align-items-start gap-2 flex-row-reverse">
+          <div class="avatar-circle-sm bg-primary text-white fw-bold flex-shrink-0">AD</div>
+          <div class="chat-bubble shadow-xs bg-navy text-white rounded-4 p-3 max-w-75">
+            <div class="d-flex align-items-center justify-content-between gap-3 mb-1">
+              <span class="fw-bold fs-8 text-warning"><i class="bi bi-shield-check me-1"></i>System Admin</span>
+              <span class="fs-8 text-white-50">${timeStr}</span>
+            </div>
+            ${attachmentHtml}
+            ${text ? `<p class="small mb-1">${text}</p>` : ''}
+            <div class="d-flex align-items-center justify-content-end gap-1 fs-8 text-white-50">
+              <i class="bi bi-check2 text-white-50" id="status-${msgId}"></i> <span id="status-text-${msgId}">Sent</span>
             </div>
           </div>
         </div>
       `;
 
-      if (chatMessageArea) {
-        chatMessageArea.insertAdjacentHTML('beforeend', newMsgHtml);
-        chatMessageArea.scrollTop = chatMessageArea.scrollHeight;
-      }
+      chatMessageArea.appendChild(bubbleWrapper);
 
+      messageTextInput.value = '';
+      if (hiddenFileInput) hiddenFileInput.value = '';
+      if (attachmentPreviewContainer) attachmentPreviewContainer.classList.add('d-none');
+
+      scrollToChatBottom();
+
+      // Update Last Message in List
       if (activeConversationItem) {
         const lastMsgEl = activeConversationItem.querySelector('.text-last-msg');
-        if (lastMsgEl) {
-          lastMsgEl.innerHTML = `<span class="text-primary fw-semibold">[Admin]:</span> ${escapeHtml(messageText)}`;
-        }
+        if (lastMsgEl) lastMsgEl.textContent = text || 'Sent an attachment';
       }
 
-      adminMessageInput.value = '';
+      // Simulate Real-Time Status Update
+      setTimeout(() => {
+        const icon = document.getElementById(`status-${msgId}`);
+        const statusTxt = document.getElementById(`status-text-${msgId}`);
+        if (icon) icon.className = 'bi bi-check2-all text-info';
+        if (statusTxt) statusTxt.textContent = 'Delivered';
+      }, 1500);
     });
   }
 
-  function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.innerText = text;
-    return div.innerHTML;
-  }
+  // 6. Action Modal Triggers
+  const btnViewUserModal = document.getElementById('btnViewUserModal');
+  const actTriggerUserDetails = document.getElementById('actTriggerUserDetails');
+  
+  if (btnViewUserModal) btnViewUserModal.addEventListener('click', () => bsUserDetailsModal && bsUserDetailsModal.show());
+  if (actTriggerUserDetails) actTriggerUserDetails.addEventListener('click', () => bsUserDetailsModal && bsUserDetailsModal.show());
 
-  // 4. Admin Actions
-  const actDeleteConv = document.getElementById('actDeleteConv');
+  // Confirm Actions Modal Utility
+  const confirmModalLabel = document.getElementById('actionConfirmModalLabel');
+  const confirmModalText = document.getElementById('confirmModalBodyText');
   const btnConfirmAction = document.getElementById('btnConfirmAction');
 
-  if (actDeleteConv) {
-    actDeleteConv.addEventListener('click', () => {
-      pendingActionType = 'delete';
-      if (bsActionModal) bsActionModal.show();
-    });
+  function triggerConfirmModal(title, text, type) {
+    pendingActionType = type;
+    if (confirmModalLabel) confirmModalLabel.textContent = title;
+    if (confirmModalText) confirmModalText.textContent = text;
+    if (bsActionConfirmModal) bsActionConfirmModal.show();
   }
+
+  const actArchive = document.getElementById('actArchive');
+  const actDelete = document.getElementById('actDelete');
+
+  if (actArchive) actArchive.addEventListener('click', () => triggerConfirmModal('Archive Conversation?', 'This conversation thread will be moved to archives.', 'archive'));
+  if (actDelete) actDelete.addEventListener('click', () => triggerConfirmModal('Delete Conversation Thread?', 'Are you sure you want to delete this support conversation thread?', 'delete'));
 
   if (btnConfirmAction) {
     btnConfirmAction.addEventListener('click', () => {
       if (activeConversationItem && pendingActionType === 'delete') {
         activeConversationItem.remove();
-        alert('Support thread deleted successfully.');
+        alert('Conversation thread deleted.');
+      } else if (activeConversationItem && pendingActionType === 'archive') {
+        alert('Conversation thread archived.');
       }
-      if (bsActionModal) bsActionModal.hide();
+      if (bsActionConfirmModal) bsActionConfirmModal.hide();
       applyFilters();
     });
   }

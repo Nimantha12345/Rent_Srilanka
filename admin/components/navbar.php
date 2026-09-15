@@ -46,7 +46,7 @@ if (!isset($activePage)) {
             <li><a class="dropdown-item small" href="settings.php"><i class="bi bi-gear me-2"></i>System Settings</a></li>
             <li><a class="dropdown-item small" href="reports.php"><i class="bi bi-shield-exclamation me-2"></i>Security Audit</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item small text-danger" href="../login.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+            <li><a class="dropdown-item small text-danger" href="../admin/login.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
           </ul>
         </div>
       </div>

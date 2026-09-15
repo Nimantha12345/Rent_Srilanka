@@ -25,6 +25,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let activeTargetId = null;
 
+  // ----------------------------------------------------
+  // DATATABLES INITIALIZATION WITH LENGTH MENU
+  // ----------------------------------------------------
+  let propTable = null;
+  if ($('#adminPropertiesTable').length) {
+    propTable = $('#adminPropertiesTable').DataTable({
+      "paging": true,
+      "lengthChange": true, // Show entries dropdown එක සක්‍රිය කිරීම
+      "lengthMenu": [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+      "pageLength": 10,
+      "searching": true,
+      "ordering": true,
+      "info": true,
+      "autoWidth": false,
+      // Default Search box එක සඟවා Top Left එකට Length Menu එක පමණක් පෙන්වීමට:
+      "dom": '<"d-flex justify-content-between align-items-center px-3 pt-3 mb-2"l>rt<"d-flex justify-content-between align-items-center p-3"ip>',
+      "columnDefs": [
+        { "orderable": false, "targets": [0, 7] } // Property Details & Actions columns Sort නොකිරීමට
+      ]
+    });
+  }
+
   // 1. URL Query Parameter Sync (e.g. ?filter=pending)
   const urlParams = new URLSearchParams(window.location.search);
   const filterParam = urlParams.get('filter');
@@ -32,38 +54,55 @@ document.addEventListener('DOMContentLoaded', () => {
     statusFilter.value = 'Pending';
   }
 
-  // 2. Filter & Sort Function
+  // 2. Filter & Sort Handler (DataTables + Mobile Cards)
   function filterAdminProperties() {
-    const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    const searchVal = searchInput ? searchInput.value.trim() : '';
     const typeVal = typeFilter ? typeFilter.value : 'all';
     const districtVal = districtFilter ? districtFilter.value : 'all';
     const statusVal = statusFilter ? statusFilter.value : 'all';
+    const sortVal = sortBySelect ? sortBySelect.value : 'newest';
 
-    const tableRows = document.querySelectorAll('.admin-prop-row');
-    const mobileCards = document.querySelectorAll('.admin-prop-card');
+    // A. Apply Filters to DataTables
+    if (propTable) {
+      // Custom Search Input (Title / Owner)
+      propTable.search(searchVal);
 
-    let pendingCount = 0;
-
-    tableRows.forEach(row => {
-      const title = (row.getAttribute('data-title') || '').toLowerCase();
-      const owner = (row.getAttribute('data-owner') || '').toLowerCase();
-      const type = row.getAttribute('data-type');
-      const district = row.getAttribute('data-district');
-      const status = row.getAttribute('data-status');
-
-      if (status === 'Pending') pendingCount++;
-
-      const matchesSearch = title.includes(searchVal) || owner.includes(searchVal);
-      const matchesType = (typeVal === 'all' || type === typeVal);
-      const matchesDistrict = (districtVal === 'all' || district === districtVal);
-      const matchesStatus = (statusVal === 'all' || status === statusVal);
-
-      if (matchesSearch && matchesType && matchesDistrict && matchesStatus) {
-        row.classList.remove('d-none');
+      // Property Type (Column 2)
+      if (typeVal === 'all') {
+        propTable.column(2).search('');
       } else {
-        row.classList.add('d-none');
+        propTable.column(2).search('^' + typeVal + '$', true, false);
       }
-    });
+
+      // District (Column 3)
+      if (districtVal === 'all') {
+        propTable.column(3).search('');
+      } else {
+        propTable.column(3).search(districtVal);
+      }
+
+      // Status (Column 5)
+      if (statusVal === 'all') {
+        propTable.column(5).search('');
+      } else {
+        propTable.column(5).search('^' + statusVal + '$', true, false);
+      }
+
+      // Sorting
+      if (sortVal === 'newest') {
+        propTable.order([6, 'desc']); // Created Date (Desc)
+      } else if (sortVal === 'oldest') {
+        propTable.order([6, 'asc']);  // Created Date (Asc)
+      } else if (sortVal === 'price_high') {
+        propTable.order([4, 'desc']); // Price (Desc)
+      }
+
+      propTable.draw();
+    }
+
+    // B. Apply Filters to Mobile Cards View
+    const mobileCards = document.querySelectorAll('.admin-prop-card');
+    const searchValLower = searchVal.toLowerCase();
 
     mobileCards.forEach(card => {
       const title = (card.getAttribute('data-title') || '').toLowerCase();
@@ -72,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const district = card.getAttribute('data-district');
       const status = card.getAttribute('data-status');
 
-      const matchesSearch = title.includes(searchVal) || owner.includes(searchVal);
+      const matchesSearch = title.includes(searchValLower) || owner.includes(searchValLower);
       const matchesType = (typeVal === 'all' || type === typeVal);
       const matchesDistrict = (districtVal === 'all' || district === districtVal);
       const matchesStatus = (statusVal === 'all' || status === statusVal);
@@ -84,15 +123,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Update Sidebar Pending Badge Count
+    // C. Update Sidebar Pending Count Badge
+    let pendingCount = 0;
+    document.querySelectorAll('.admin-prop-row').forEach(row => {
+      if (row.getAttribute('data-status') === 'Pending') pendingCount++;
+    });
     const sidebarBadge = document.getElementById('adminSidebarPendingBadge');
     if (sidebarBadge) sidebarBadge.textContent = pendingCount;
   }
 
-  // Initial Filter Call
+  // Initial Filter Run
   filterAdminProperties();
 
-  // Listeners
+  // Filter Event Listeners
   if (searchInput) searchInput.addEventListener('input', filterAdminProperties);
   if (typeFilter) typeFilter.addEventListener('change', filterAdminProperties);
   if (districtFilter) districtFilter.addEventListener('change', filterAdminProperties);
@@ -171,15 +214,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnConfirmDelete) {
     btnConfirmDelete.addEventListener('click', () => {
       if (activeTargetId) {
-        const rows = document.querySelectorAll(`[data-id="${activeTargetId}"]`);
-        rows.forEach(item => item.remove());
+        // DataTable එකෙන් Row එක Remove කිරීම
+        if (propTable) {
+          const tr = document.querySelector(`tr.admin-prop-row[data-id="${activeTargetId}"]`);
+          if (tr) propTable.row(tr).remove().draw();
+        }
+
+        // Mobile Card එක Remove කිරීම
+        const mobileCards = document.querySelectorAll(`.admin-prop-card[data-id="${activeTargetId}"]`);
+        mobileCards.forEach(item => item.remove());
+
         if (bsDeleteModal) bsDeleteModal.hide();
         filterAdminProperties();
       }
     });
   }
 
-  // Helper to update status badges in DOM dynamically
+  // Dynamic Status UI Updating Helper
   function updateStatusUI(id, newStatus, badgeClass) {
     const items = document.querySelectorAll(`[data-id="${id}"]`);
     items.forEach(item => {
